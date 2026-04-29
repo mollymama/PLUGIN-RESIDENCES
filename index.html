@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>創域居所｜Live-Work Housing Platform</title>
+ <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.20.1/dist/maplibre-gl.css">
+ <link rel="stylesheet" href="style.css">  <!-- ⭐這行 -->
+  
+</head>
+
+<body>
+
+  <header>
+    <a class="brand" href="#">
+      <span>
+        <span class="logo">創域居所</span>
+        <span class="brand-subtitle">Live-Work Housing</span>
+      </span>
+    </a>
+
+    <nav aria-label="Primary navigation">
+      <a href="#units">Unit Types</a>
+      <a href="#system">Locations</a>
+      <a href="#about">About</a>
+    </nav>
+
+    <button class="header-cta" type="button" onclick="scrollToSection('units')">Explore</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="kinetic-title" role="button" tabindex="0" onclick="flipLifestyleTitle()" onkeydown="handleTitleKey(event)" aria-label="Choosing YOUR Lifestyle">
+          <span>Choosing</span>
+          <span>YOUR</span>
+          <span>Lifestyle</span>
+        </h1>
+        <div class="hero-copy">
+          <p class="hero-statement">
+            A new housing system<br>
+            for a new way of living.
+          </p>
+          <p class="hero-action">Choose how you live. Build how you work.</p>
+        </div>
+
+        <div class="hero-buttons">
+          <button class="primary" onclick="scrollToSection('units')">Explore Units</button>
+          <button class="secondary" onclick="scrollToSection('system')">Find Location</button>
+          <button class="secondary" onclick="scrollToSection('about')">Special Sites</button>
+        </div>
+      </div>
+
+      <div class="model-box carousel" aria-label="Factory Reuse Housing Prototype image carousel">
+        <div class="carousel-track">
+          <img src="images/Gemini_Generated_Image_szmgsjszmgsjszmg.png" class="model-image carousel-slide active" alt="Factory Reuse Housing Prototype">
+          <img src="images/Gemini_Generated_Image_bbcj0kbbcj0kbbcj.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 2">
+          <img src="images/Gemini_Generated_Image_x74oe2x74oe2x74o.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 3">
+          <img src="images/ChatGPT Image 20201_28_54.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 4">
+          <img src="images/ChatGPT Image 202602_14_37.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 5">
+          <img src="images/ChatGPT Image 3_25_12.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 6">
+          <img src="images/ChatGPT Image12_44_14.png" class="model-image carousel-slide" alt="Factory Reuse Housing Prototype view 7">
+        </div>
+        <div class="carousel-dots" aria-label="Carousel image selectors">
+          <button class="carousel-dot active" type="button" onclick="goToSlide(0)" aria-label="Show image 1"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(1)" aria-label="Show image 2"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(2)" aria-label="Show image 3"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(3)" aria-label="Show image 4"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(4)" aria-label="Show image 5"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(5)" aria-label="Show image 6"></button>
+          <button class="carousel-dot" type="button" onclick="goToSlide(6)" aria-label="Show image 7"></button>
+        </div>
+      </div>
+    
+    </section>
+
+    <section id="units">
+      <h2 class="section-title">三種居住工作單元</h2>
+      <p class="section-desc">
+        房型不再只是坪數分類，而是依照使用者的工作模式與生活型態生成。
+        每一種 unit 都對應一種新的城市居住需求。
+      </p>
+
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterUnits('all', this)">All</button>
+        <button class="filter-btn" onclick="filterUnits('logi', this)">Logi-Unit</button>
+        <button class="filter-btn" onclick="filterUnits('media', this)">Media-Unit</button>
+        <button class="filter-btn" onclick="filterUnits('focus', this)">Focus-Unit</button>
+      </div>
+
+      <div class="cards">
+        <div class="card unit-card" data-type="logi">
+          <div>
+            <div class="card-type">E-COMMERCE / LIGHT INDUSTRY</div>
+            <h3>Logi-Unit</h3>
+            <p>
+              為電商、自雇者與輕工業工作者設計。
+              入口鄰近工作區，配置倉儲、包裝、出貨與居住空間。
+            </p>
+          </div>
+          <span class="tag">Storage + Packing + Living</span>
+        </div>
+
+        <div class="card unit-card" data-type="media">
+          <div>
+            <div class="card-type">CREATOR / STUDIO</div>
+            <h3>Media-Unit</h3>
+            <p>
+              為影像創作者、設計師與內容工作者設計。
+              結合工作室、拍攝、剪輯與彈性居住空間。
+            </p>
+          </div>
+          <span class="tag">Studio + Editing + Living</span>
+        </div>
+
+        <div class="card unit-card" data-type="focus">
+          <div>
+            <div class="card-type">REMOTE WORK / DEEP FOCUS</div>
+            <h3>Focus-Unit</h3>
+            <p>
+              為工程師、研究者與遠端工作者設計。
+              強調安靜、採光、閱讀與長時間專注工作的環境。
+            </p>
+          </div>
+          <span class="tag">Work + Rest + Concentration</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="system" class="location-section">
+      <div class="location-heading">
+        <div>
+          <p class="section-kicker">Greater Taipei Network</p>
+          <h2 class="section-title">Find Location</h2>
+        </div>
+        <p class="section-desc">
+          An interactive location layer for potential live-work housing sites across Taipei and New Taipei.
+          Each marker can connect to future API data such as ownership, vacancy, transit access, and spatial capacity.
+        </p>
+      </div>
+
+      <div class="location-grid">
+        <div class="location-panel">
+          <div class="location-panel-header">
+            <span>Available Sites</span>
+            <strong id="location-count">0</strong>
+          </div>
+          <div id="location-list" class="location-list" aria-label="Potential housing system locations"></div>
+        </div>
+
+        <div class="map-shell">
+          <div id="location-map" class="location-map" aria-label="Interactive map of Taipei and New Taipei locations"></div>
+        </div>
+      </div>
+      <h2 class="section-title">空間生成系統</h2>
+      <p class="section-desc">
+        設計不是從單一造型開始，而是從既有工廠結構、核心筒、廊道、庭院與房型規則之間的關係生成。
+      </p>
+
+      <div class="system">
+        <div class="system-item">
+          <span>01</span>
+          <h4>Structure Grid</h4>
+          <p>以既有工廠結構為基礎，插入可調整的住宅網格系統。</p>
+        </div>
+
+        <div class="system-item">
+          <span>02</span>
+          <h4>Core System</h4>
+          <p>分離住宅垂直動線與生產物流動線，形成雙核心配置。</p>
+        </div>
+
+        <div class="system-item">
+          <span>03</span>
+          <h4>Courtyard Corridor</h4>
+          <p>透過中庭與環狀走廊，將採光、通風與公共性引入住宅內部。</p>
+        </div>
+
+        <div class="system-item">
+          <span>04</span>
+          <h4>Unit Rules</h4>
+          <p>依照使用者需求，將不同房型植入網格並形成可複製的住宅產品。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2 class="section-title">關於這個提案</h2>
+      <p class="section-desc">
+        台北缺乏社宅與新型工宅，但城市中仍存在許多低度使用或閒置的工業空間。
+        本設計以北投片場作為示範基地，將舊有工廠的空間特徵轉化為一套可被複製的居住生產系統。
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 創域居所｜Live-Work Housing Prototype
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@5.20.1/dist/maplibre-gl.js"></script>
+  <script src="function/script.js"></script>
+
+</body>
+</html>
