@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unit 3D Model</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: #f6f1e8;
+      color: #3a3129;
+    }
+
+    .viewer-page {
+      min-height: 100vh;
+      display: block;
+    }
+
+    .viewer-grid {
+      display: block;
+      min-height: 0;
+    }
+
+    .model-stage {
+      height: 100vh;
+      min-height: 680px;
+      padding: 0;
+      background: #eef0ed;
+    }
+
+    .model-viewer {
+      --floorplan-width: clamp(430px, 44vw, 700px);
+      --info-panel-width: 420px;
+      width: 100%;
+      height: 100%;
+      min-height: 680px;
+      position: relative;
+      overflow: hidden;
+      border: 0;
+      border-radius: 0;
+      background: linear-gradient(180deg, #f8f8f5 0%, #e8ebe6 100%);
+      box-shadow: none;
+    }
+
+    .model-viewer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .room-hotspot-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .room-hotspot {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.64);
+      box-shadow: 0 8px 20px rgba(17, 17, 17, 0.16);
+      cursor: pointer;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .room-hotspot::before {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #2f2c29;
+      box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.88);
+      content: "";
+      transform: translate(-50%, -50%);
+    }
+
+    .room-hotspot:hover,
+    .room-hotspot:focus-visible {
+      transform: translate(-50%, -50%) scale(1.06);
+    }
+
+    .room-hotspot.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .viewer-toolbar {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      z-index: 4;
+      display: flex;
+      gap: 12px;
+    }
+
+    .viewer-icon-btn {
+      width: 52px;
+      height: 52px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.94);
+      color: #111;
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 10px 24px rgba(17, 17, 17, 0.14);
+      cursor: pointer;
+    }
+
+    .viewer-icon-btn:hover,
+    .viewer-icon-btn:focus-visible {
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    .viewer-bottom-actions {
+      position: absolute;
+      right: 18px;
+      bottom: 30px;
+      z-index: 5;
+      display: flex;
+      gap: 14px;
+    }
+
+    .model-viewer:not(.is-model-ready) .floorplan-map,
+    .model-viewer:not(.is-model-ready) .unit-info-panel,
+    .model-viewer:not(.is-model-ready) .viewer-bottom-actions {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .viewer-bottom-actions .viewer-icon-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      font-size: 25px;
+    }
+
+    .viewer-icon-btn.is-active {
+      background: #cf855d;
+      color: #fff;
+    }
+
+    .unit-info-panel {
+      position: absolute;
+      right: 30px;
+      bottom: 106px;
+      z-index: 5;
+      display: flex;
+      width: var(--info-panel-width);
+      overflow: visible;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 14px 30px rgba(17, 17, 17, 0.16);
+    }
+
+    .unit-info-item {
+      min-width: 92px;
+      padding: 12px 16px;
+      color: #111;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .unit-info-item + .unit-info-item {
+      border-left: 1px solid rgba(17, 17, 17, 0.22);
+    }
+
+    .unit-info-availability {
+      position: relative;
+      min-width: 125px;
+      border-left: 1px solid rgba(17, 17, 17, 0.22);
+    }
+
+    .unit-available-toggle {
+      width: 100%;
+      height: 100%;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #111;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .unit-info-availability.is-unavailable .unit-available-toggle {
+      color: rgba(17, 17, 17, 0.42);
+    }
+
+    .unit-available-toggle:hover,
+    .unit-available-toggle:focus-visible {
+      background: #111;
+      color: #fff;
+      outline: none;
+    }
+
+    .unit-site-menu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 10px);
+      z-index: 8;
+      width: 260px;
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 40px rgba(17, 17, 17, 0.2);
+    }
+
+    .unit-site-menu[hidden] {
+      display: none;
+    }
+
+    .unit-site-option {
+      width: 100%;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 7px;
+      background: #f2eee6;
+      color: #111;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .unit-site-option img {
+      width: 34px;
+      aspect-ratio: 1;
+      display: block;
+      object-fit: contain;
+      padding: 4px;
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .unit-site-option:hover,
+    .unit-site-option:focus-visible {
+      background: #111;
+      color: #fff;
+      outline: none;
+    }
+
+    .unit-site-option span {
+      display: grid;
+      gap: 3px;
+    }
+
+    .unit-site-option b {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .unit-site-option small,
+    .unit-site-empty {
+      color: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      line-height: 1.35;
+      opacity: 0.72;
+      text-transform: uppercase;
+    }
+
+    .unit-site-empty {
+      display: block;
+      padding: 12px 14px;
+    }
+
+    .floorplan-map {
+      position: absolute;
+      right: calc(30px + (var(--info-panel-width) - var(--floorplan-width)) / 2);
+      top: auto;
+      bottom: 176px;
+      z-index: 4;
+      width: var(--floorplan-width);
+      min-width: 0;
+      padding: 0;
+      background: transparent;
+      filter: drop-shadow(0 18px 32px rgba(17, 17, 17, 0.22));
+      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+    }
+
+    .model-viewer.is-plan-hidden .floorplan-map {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(10px) scale(0.98);
+    }
+
+    .floorplan-title {
+      display: none;
+    }
+
+    .floorplan-shell {
+      position: relative;
+      aspect-ratio: 1.25;
+      overflow: visible;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .floorplan-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .floorplan-image.is-media-plan {
+      object-fit: contain;
+      transform: scale(1.18);
+      transform-origin: center;
+    }
+
+    .floorplan-image.is-logi-plan {
+      object-fit: contain;
+      transform: translateY(-8%) scale(1.18);
+      transform-origin: center;
+    }
+
+    .floorplan-image.is-focus-plan {
+      object-fit: contain;
+      transform: scale(1.18);
+      transform-origin: center;
+    }
+
+    .floorplan-point {
+      position: absolute;
+      z-index: 1;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 5px 15px rgba(17, 17, 17, 0.18);
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+    }
+
+    .floorplan-point::before {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #24211f;
+      content: "";
+      transform: translate(-50%, -50%);
+    }
+
+    .floorplan-point.is-active {
+      width: 46px;
+      height: 46px;
+      background: rgba(222, 139, 92, 0.45);
+      box-shadow: 0 0 0 9px rgba(222, 139, 92, 0.22);
+    }
+
+    .floorplan-point.is-active::before {
+      width: 14px;
+      height: 14px;
+      background: #111;
+      box-shadow: 0 0 0 9px #fff;
+    }
+
+    .model-status {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: rgba(255, 250, 240, 0.82);
+      color: #3a3129;
+      text-align: center;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .model-status.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .model-status strong {
+      display: block;
+      margin-bottom: 12px;
+      font-size: clamp(32px, 5vw, 72px);
+      line-height: 0.9;
+    }
+
+    .model-loader {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 18px;
+      border: 3px solid rgba(58, 49, 41, 0.18);
+      background: rgba(255, 255, 255, 0.34);
+    }
+
+    .model-loader::before {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #3a3129;
+      content: "";
+      animation: model-loader-run 1.15s infinite ease-in-out;
+    }
+
+    @keyframes model-loader-run {
+      0% {
+        left: 3px;
+        top: 3px;
+      }
+
+      25% {
+        left: 23px;
+        top: 3px;
+      }
+
+      50% {
+        left: 23px;
+        top: 23px;
+      }
+
+      75% {
+        left: 3px;
+        top: 23px;
+      }
+
+      100% {
+        left: 3px;
+        top: 3px;
+      }
+    }
+
+    .model-status span {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 820px) {
+      .model-stage {
+        height: 100vh;
+        min-height: 460px;
+        padding: 0;
+      }
+
+      .model-viewer {
+        min-height: 460px;
+      }
+
+      .viewer-toolbar {
+        top: 16px;
+        left: 16px;
+      }
+
+      .viewer-bottom-actions {
+        right: 16px;
+        bottom: 16px;
+        gap: 10px;
+      }
+
+      .viewer-bottom-actions .viewer-icon-btn {
+        width: 50px;
+        height: 50px;
+      }
+
+      .unit-info-panel {
+        right: 16px;
+        bottom: 82px;
+        left: 16px;
+        width: auto;
+        flex-wrap: wrap;
+        overflow: visible;
+      }
+
+      .unit-info-item {
+        flex: 1 0 auto;
+        min-width: 96px;
+        padding: 14px 16px;
+        font-size: 16px;
+      }
+
+      .unit-info-availability {
+        flex: 1 0 150px;
+        min-width: 150px;
+      }
+
+      .unit-available-toggle {
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+
+      .unit-site-menu {
+        right: auto;
+        left: 0;
+        width: min(260px, calc(100vw - 32px));
+      }
+
+      .floorplan-map {
+        right: 14px;
+        top: auto;
+        bottom: 150px;
+        width: calc(100% - 28px);
+        min-width: 0;
+      }
+
+      .floorplan-shell {
+        aspect-ratio: 1.9;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="viewer-page">
+    <section class="viewer-grid" aria-label="Unit 3D model viewer">
+      <div class="model-stage">
+        <div id="model-viewer" class="model-viewer">
+          <div class="viewer-toolbar" aria-label="Viewer controls">
+            <button id="overview-view" class="viewer-icon-btn" type="button" aria-label="Back to overview" title="Back to overview">&#8962;</button>
+          </div>
+          <div class="floorplan-map" aria-label="Room navigation">
+            <div class="floorplan-title">Unit Plan</div>
+            <div id="floorplan-shell" class="floorplan-shell">
+              <img id="floorplan-image" class="floorplan-image" src="../images/L.png" alt="L unit floor plan" />
+            </div>
+          </div>
+          <div id="unit-info-panel" class="unit-info-panel" aria-label="Unit information"></div>
+          <div class="viewer-bottom-actions" aria-label="View controls">
+            <button id="plan-toggle" class="viewer-icon-btn is-active" type="button" aria-label="Toggle floor plan" title="Toggle floor plan">&#9638;</button>
+            <button id="fullscreen-view" class="viewer-icon-btn" type="button" aria-label="Toggle fullscreen" title="Toggle fullscreen">&#9974;</button>
+          </div>
+          <div id="model-status" class="model-status">
+            <div>
+              <strong id="model-label">3D</strong>
+              <div class="model-loader" aria-hidden="true"></div>
+              <span id="model-status-text">Loading model</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+    <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { Rhino3dmLoader } from "./3DMLoader.local.js";
+
+    const unitNames = {
+      logi: "LOGI",
+      media: "MEDIA",
+      focus: "FOCUS"
+    };
+
+    const unitModels = {
+      logi: "../model/L.3dm",
+      media: "../model/M.3dm",
+      focus: "../model/F.3dm"
+    };
+
+    const unitDetails = {
+      logi: ["LOGI", "22 坪", "2 rooms"],
+      media: ["MEDIA", "18 坪", "1 rooms"],
+      focus: ["FOCUS", "23 坪", "2 rooms"],
+      default: ["Unit", "-- m²", "-- rooms"]
+    };
+
+    const marketSites = [
+      { id: "beitou", name: "Beitou Studio Site", district: "Taipei / Beitou", logo: "../images/BeitouLOGO-02.png" },
+      { id: "nangang", name: "Nangang Industrial Edge", district: "Taipei / Nangang", logo: "../images/NangangLOGO-03.png" },
+      { id: "sanchong", name: "Sanchong River Interface", district: "New Taipei / Sanchong", logo: "../images/SanchongLOGO-05.png" }
+    ];
+
+    function shuffleItems(items) {
+      return [...items].sort(() => Math.random() - 0.5);
+    }
+
+    const unitMarketStateKey = "liveWorkMarketState";
+    const marketUnitTypes = ["logi", "media", "focus"];
+
+    function createUnitMarketState() {
+      return marketUnitTypes.reduce((state, unitKey) => {
+        const isAvailable = Math.random() > 0.28;
+        const siteCount = Math.ceil(Math.random() * marketSites.length);
+
+        state[unitKey] = {
+          isAvailable,
+          siteIds: isAvailable ? shuffleItems(marketSites).slice(0, siteCount).map(site => site.id) : []
+        };
+
+        return state;
+      }, {});
+    }
+
+    function getUnitMarketState() {
+      const storedState = sessionStorage.getItem(unitMarketStateKey);
+
+      if (storedState) {
+        try {
+          const parsedState = JSON.parse(storedState);
+          const validSiteIds = new Set(marketSites.map(site => site.id));
+
+          if (
+            marketUnitTypes.every(unitKey => parsedState[unitKey]) &&
+            marketUnitTypes.every(unitKey => (parsedState[unitKey].siteIds || []).every(siteId => validSiteIds.has(siteId)))
+          ) {
+            return parsedState;
+          }
+        } catch (error) {
+          sessionStorage.removeItem(unitMarketStateKey);
+        }
+      }
+
+      const state = createUnitMarketState();
+      sessionStorage.setItem(unitMarketStateKey, JSON.stringify(state));
+      return state;
+    }
+
+    function getUnitAvailability(unitKey) {
+      const unitState = getUnitMarketState()[unitKey] || {
+        isAvailable: false,
+        siteIds: []
+      };
+
+      return {
+        isAvailable: unitState.isAvailable,
+        sites: unitState.siteIds
+          .map(siteId => marketSites.find(site => site.id === siteId))
+          .filter(Boolean)
+      };
+    }
+
+    function renderUnitInfoPanel(panel, info, unitKey) {
+      const availability = getUnitAvailability(unitKey);
+      const menuId = "unit-site-menu";
+      const siteOptions = availability.sites.length > 0 ? availability.sites.map(site => `
+        <button class="unit-site-option" type="button" data-site-id="${site.id}">
+          <img src="${site.logo}" alt="${site.name} logo">
+          <span>
+            <b>${site.name}</b>
+            <small>${site.district}</small>
+          </span>
+        </button>
+      `).join("") : `<span class="unit-site-empty">Checking new sites</span>`;
+
+      panel.innerHTML = `
+        ${info.map(item => `<span class="unit-info-item">${item}</span>`).join("")}
+        <div class="unit-info-availability${availability.isAvailable ? "" : " is-unavailable"}">
+          <button class="unit-available-toggle" type="button" aria-expanded="false" aria-controls="${menuId}">
+            ${availability.isAvailable ? "AVAILABLE" : "UNAVAILABLE"}
+          </button>
+          <div id="${menuId}" class="unit-site-menu" hidden>
+            ${siteOptions}
+          </div>
+        </div>
+      `;
+
+      const toggle = panel.querySelector(".unit-available-toggle");
+      const menu = panel.querySelector(".unit-site-menu");
+
+      toggle?.addEventListener("click", event => {
+        event.stopPropagation();
+
+        if (!menu) {
+          return;
+        }
+
+        const shouldOpen = menu.hidden;
+        menu.hidden = !shouldOpen;
+        toggle.setAttribute("aria-expanded", String(shouldOpen));
+      });
+
+      panel.querySelectorAll(".unit-site-option").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          const siteId = button.dataset.siteId;
+
+          if (!siteId) {
+            return;
+          }
+
+          sessionStorage.setItem("pendingLocationSite", siteId);
+          window.parent.postMessage({ type: "select-location-site", siteId }, "*");
+
+          if (window.parent === window) {
+            window.location.href = "../index.html#system";
+          }
+        });
+      });
+
+      document.addEventListener("click", () => {
+        if (menu) {
+          menu.hidden = true;
+          toggle?.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    const unitInitialRoomViewIds = {
+      logi: "studio",
+      media: "living",
+      focus: "living"
+    };
+
+    function getFreshModelPath(path) {
+      if (!path) {
+        return null;
+      }
+
+      const separator = path.includes("?") ? "&" : "?";
+      return `${path}${separator}v=${Date.now()}`;
+    }
+
+    const unitFloorplans = {
+      logi: {
+        src: "../images/L_Plan.png",
+        alt: "L_Plan unit floor plan"
+      },
+      media: {
+        src: "../images/M_Plan.png",
+        alt: "M_Plan unit floor plan"
+      },
+      focus: {
+        src: "../images/F_Plan.png",
+        alt: "F_Plan unit floor plan"
+      }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const unitType = params.get("unit") || "logi";
+    const humanEyeFov = 15;
+    const humanEyePitch = THREE.MathUtils.degToRad(18);
+    const roomViewFov = 75;
+    const overviewControlDistance = { min: 2.5, max: 32 };
+    const roomControlDistance = { min: 0.25, max: 1.55 };
+
+    const unitPlanPointSettings = {
+      logi: {
+        swapLivingBedroom: false,
+        applyAdjustments: true,
+        adjustments: {
+          entry: { x: 0, y: 0 },
+          living: { x: 40, y: 0 },
+          studio: { x: 50, y:20 },
+          masterroom: { x: -18, y: 0 },
+          bedroom: { x: -19, y: 7 },
+          bathroom: { x: -20, y: 8 }
+        }
+      },
+
+      media: {
+        swapLivingBedroom: false,
+        applyAdjustments: true,
+        adjustments: {
+          entry: { x: 0, y: 0 },
+          living: { x: 23, y: 13 },
+          studio: { x: 47, y: -5 },
+          masterroom: { x: 0, y: 0 },
+          bedroom: { x: -20, y: 15 },
+          bathroom: { x: -18, y: 3 }
+        }
+      },
+
+      focus: {
+        swapLivingBedroom: false,
+        applyAdjustments: true,
+        adjustments: {
+          entry: { x: 0, y: 0 },
+          living: { x: 15, y: 10 },
+          studio: { x: 30, y: 3 },
+          masterroom: { x: -15, y: -10 },
+          bedroom: { x: -15, y: 3 },
+          bathroom: { x: -15, y: -3 }
+        }
+      }
+    };
+
+    const unitRoomViewSettings = {
+      logi: {
+        entry: { target: null, reverse: false, yaw: 0 },
+        living: { target: "studio", reverse: false, yaw: 0 },
+        studio: { target: "living", reverse: false, yaw: 0 },
+        masterroom: { target: null, reverse: false, yaw: 150 },
+        bedroom: { target: null, reverse: true, yaw: 0 },
+        bathroom: { target: null, reverse: true, yaw: 0 }
+      },
+
+      media: {
+        entry: { target: null, reverse: false, yaw: 0 },
+        living: { target: "studio", reverse: false, yaw: 0 },
+        studio: { target: null, reverse: true, yaw: 35 },
+        masterroom: { target: "living", reverse: true, yaw: 0 },
+        bedroom: { target: null, reverse: true, yaw: 0 },
+        bathroom: { target: null, reverse: true, yaw: 0 }
+      },
+
+      focus: {
+        entry: { target: null, reverse: false, yaw: 0 },
+        living: { target: "studio", reverse: false, yaw: -20 },
+        studio: { target: "living", reverse: true, yaw: -30 },
+        masterroom: { target: null, reverse: true, yaw: 90 },
+        bedroom: { target: null, reverse: true, yaw: -25 },
+        bathroom: { target: null, reverse: true, yaw: 60 }
+      }
+    };
+
+    function loadUnitModel(type) {
+      const title = document.getElementById("unit-title");
+      const label = document.getElementById("model-label");
+      const modelViewer = document.getElementById("model-viewer");
+      const modelStatus = document.getElementById("model-status");
+      const modelStatusText = document.getElementById("model-status-text");
+      const overviewView = document.getElementById("overview-view");
+      const fullscreenView = document.getElementById("fullscreen-view");
+      const planToggle = document.getElementById("plan-toggle");
+      const floorplanShell = document.getElementById("floorplan-shell");
+      const floorplanImage = document.getElementById("floorplan-image");
+      const unitInfoPanel = document.getElementById("unit-info-panel");
+      const unitName = unitNames[type] || "PLUGIN";
+      const externalModelPath = params.get("model") || unitModels[type];
+      const modelPath = getFreshModelPath(externalModelPath);
+      const floorplan = unitFloorplans[type] || unitFloorplans.logi;
+      const unitInfo = unitDetails[type] || unitDetails.default;
+      const initialRoomViewId = unitInitialRoomViewIds[type] || null;
+      const overviewState = {
+        position: new THREE.Vector3(),
+        target: new THREE.Vector3(),
+        fov: humanEyeFov
+      };
+      let transition = null;
+      let modelBounds = null;
+      let interiorBounds = null;
+      let loadedModel = null;
+      let roomHotspots = [];
+      let activeRoomId = null;
+
+      if (title) {
+        title.textContent = unitName;
+      }
+      label.textContent = unitName;
+      floorplanImage.src = floorplan.src;
+      floorplanImage.alt = floorplan.alt;
+      floorplanImage.classList.toggle("is-media-plan", type === "media");
+      floorplanImage.classList.toggle("is-logi-plan", type === "logi");
+      floorplanImage.classList.toggle("is-focus-plan", type === "focus");
+      renderUnitInfoPanel(unitInfoPanel, unitInfo, type);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf3f4f0);
+
+      const camera = new THREE.PerspectiveCamera(humanEyeFov, 1, 0.1, 1000);
+      camera.position.set(4, 1.8, 8);
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NeutralToneMapping;
+      renderer.toneMappingExposure = 1.22;
+      modelViewer.appendChild(renderer.domElement);
+
+      const hotspotLayer = document.createElement("div");
+      hotspotLayer.className = "room-hotspot-layer";
+      modelViewer.appendChild(hotspotLayer);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.minDistance = overviewControlDistance.min;
+      controls.maxDistance = overviewControlDistance.max;
+      controls.target.set(0, 0.8, 0);
+
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xd7d2c7, 2.15));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+      keyLight.position.set(3.5, 8, 5.5);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xf7f2e8, 1.55);
+      fillLight.position.set(-5, 4.5, -3.5);
+      scene.add(fillLight);
+
+      const frontLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      frontLight.position.set(0, 3.5, 7);
+      scene.add(frontLight);
+
+
+
+      const modelRoot = new THREE.Group();
+      scene.add(modelRoot);
+
+      const hotspotGroup = new THREE.Group();
+      modelRoot.add(hotspotGroup);
+
+      const loader = new Rhino3dmLoader();
+      loader.setLibraryPath("https://cdn.jsdelivr.net/npm/rhino3dm@8.4.0/");
+
+      function setStatus(message, isVisible = true) {
+        modelStatusText.textContent = message;
+        modelStatus.classList.toggle("is-hidden", !isVisible);
+      }
+
+      function disposeObject(object) {
+        object.traverse(child => {
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+
+          if (child.material) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach(material => material.dispose());
+          }
+        });
+      }
+
+      function clearLoadedModel() {
+        modelViewer.classList.remove("is-model-ready");
+
+        if (loadedModel) {
+          modelRoot.remove(loadedModel);
+          disposeObject(loadedModel);
+          loadedModel = null;
+        }
+
+        hotspotGroup.clear();
+        hotspotLayer.innerHTML = "";
+        floorplanShell.querySelectorAll(".floorplan-point").forEach(point => point.remove());
+        modelBounds = null;
+        interiorBounds = null;
+        roomHotspots = [];
+        activeRoomId = null;
+      }
+
+      function showModelLoadError(error, sourceLabel) {
+        const detail = error?.message || error?.target?.statusText || "Unknown loading error";
+        console.error("Unable to load 3DM model:", error);
+        setStatus(`Unable to load ${sourceLabel}. ${detail}`);
+      }
+
+      function findRhinoInstanceTransform(userData) {
+        const visited = new WeakSet();
+        const transformKeys = ["instanceTransform", "transform", "xform", "matrix"];
+
+        function matrixFromValue(value) {
+          if (!value) {
+            return null;
+          }
+
+          if (value.isMatrix4) {
+            return value.clone();
+          }
+
+          if (Array.isArray(value.elements) && value.elements.length === 16 && value.elements.every(Number.isFinite)) {
+            return new THREE.Matrix4().fromArray(value.elements);
+          }
+
+          const array = Array.isArray(value)
+            ? value
+            : ArrayBuffer.isView(value)
+              ? Array.from(value)
+              : Array.isArray(value.array)
+                ? value.array
+                : ArrayBuffer.isView(value.array)
+                  ? Array.from(value.array)
+                  : null;
+
+          if (!array || array.length !== 16 || !array.every(Number.isFinite)) {
+            return null;
+          }
+
+          return new THREE.Matrix4().set(...array);
+        }
+
+        function search(value, depth = 0) {
+          if (!value || typeof value !== "object" || depth > 4) {
+            return null;
+          }
+
+          if (visited.has(value)) {
+            return null;
+          }
+
+          visited.add(value);
+
+          for (const key of transformKeys) {
+            const matrix = matrixFromValue(value[key]);
+
+            if (matrix) {
+              return matrix;
+            }
+          }
+
+          for (const [key, nestedValue] of Object.entries(value)) {
+            if (/instance|block|transform|xform|matrix/i.test(key)) {
+              const directMatrix = matrixFromValue(nestedValue);
+
+              if (directMatrix) {
+                return directMatrix;
+              }
+
+              const nestedMatrix = search(nestedValue, depth + 1);
+
+              if (nestedMatrix) {
+                return nestedMatrix;
+              }
+            }
+          }
+
+          return null;
+        }
+
+        return search(userData);
+      }
+
+      function logRhinoInstanceCandidate(child, matrix, wasApplied) {
+        console.groupCollapsed(
+          "[Rhino block / instance]",
+          child.name || "(unnamed)",
+          child.type,
+          wasApplied ? "transform applied" : "debug only"
+        );
+        console.log("name:", child.name);
+        console.log("type:", child.type);
+        console.log("userData:", child.userData);
+        console.log("position:", child.position.toArray());
+        console.log("matrix:", child.matrix.elements.slice());
+        console.log("matrixWorld:", child.matrixWorld.elements.slice());
+
+        if (matrix) {
+          console.log("rhinoInstanceMatrix:", matrix.elements.slice());
+        }
+
+        console.groupEnd();
+      }
+
+      function hasRhinoInstanceHint(value, depth = 0, visited = new WeakSet()) {
+        if (!value || typeof value !== "object" || depth > 4) {
+          return false;
+        }
+
+        if (visited.has(value)) {
+          return false;
+        }
+
+        visited.add(value);
+
+        return Object.entries(value).some(([key, nestedValue]) => (
+          /instance|block|transform|xform|matrix/i.test(key)
+          || (typeof nestedValue === "string" && /instance|block|transform|xform|matrix/i.test(nestedValue))
+          || hasRhinoInstanceHint(nestedValue, depth + 1, visited)
+        ));
+      }
+
+      function fixRhinoInstanceTransforms(object) {
+        object.updateMatrixWorld(true);
+
+        object.traverse(child => {
+          const userData = child.userData || {};
+          const looksLikeRhinoInstance = /instance|block|transform|xform|matrix/i.test(
+            `${child.name || ""} ${child.type || ""} ${userData.objectType || ""}`
+          ) || hasRhinoInstanceHint(userData);
+
+          if (!looksLikeRhinoInstance) {
+            return;
+          }
+
+          const matrix = findRhinoInstanceTransform(userData);
+
+          if (matrix && !userData.instanceTransformFixed) {
+            child.applyMatrix4(matrix);
+            child.updateMatrixWorld(true);
+            userData.instanceTransformFixed = true;
+            logRhinoInstanceCandidate(child, matrix, true);
+            return;
+          }
+
+          logRhinoInstanceCandidate(child, matrix, false);
+        });
+      }
+
+      function addModelToScene(object, sourceLabel) {
+        clearLoadedModel();
+        object.rotation.x = -Math.PI / 2;
+        loadedModel = object;
+        modelRoot.add(object);
+        frameModel(object);
+        resizeRenderer();
+        modelViewer.classList.add("is-model-ready");
+        window.parent.postMessage({ type: "unit-3d-model-ready" }, "*");
+        setStatus(`Loaded ${sourceLabel}`, false);
+      }
+
+      function getLookAtQuaternion(position, target) {
+        const matrix = new THREE.Matrix4().lookAt(position, target, camera.up);
+        return new THREE.Quaternion().setFromRotationMatrix(matrix);
+      }
+
+      function moveCameraTo(position, target, fov) {
+        transition = {
+          startTime: performance.now(),
+          duration: 950,
+          fromPosition: camera.position.clone(),
+          toPosition: position.clone(),
+          fromQuaternion: camera.quaternion.clone(),
+          toQuaternion: getLookAtQuaternion(position, target),
+          fromFov: camera.fov,
+          toFov: fov,
+          fromTarget: controls.target.clone(),
+          toTarget: target.clone()
+        };
+
+        controls.enabled = false;
+      }
+
+      function saveOverviewState() {
+        overviewState.position.copy(camera.position);
+        overviewState.target.copy(controls.target);
+        overviewState.fov = camera.fov;
+      }
+
+      function returnToOverview() {
+        activeRoomId = null;
+        controls.minDistance = overviewControlDistance.min;
+        controls.maxDistance = overviewControlDistance.max;
+        unlockRoomViewControls();
+        updateActiveRoom();
+        moveCameraTo(overviewState.position, overviewState.target, overviewState.fov);
+      }
+
+      function unlockRoomViewControls() {
+        controls.minAzimuthAngle = -Infinity;
+        controls.maxAzimuthAngle = Infinity;
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
+      }
+
+      function lockRoomViewControls() {
+        controls.update();
+
+        const horizontalLimit = THREE.MathUtils.degToRad(25);
+        const lockedPolarAngle = controls.getPolarAngle();
+        const centerAzimuthAngle = controls.getAzimuthalAngle();
+
+        controls.minAzimuthAngle = centerAzimuthAngle - horizontalLimit;
+        controls.maxAzimuthAngle = centerAzimuthAngle + horizontalLimit;
+        controls.minPolarAngle = lockedPolarAngle;
+        controls.maxPolarAngle = lockedPolarAngle;
+      }
+
+      function updateActiveRoom() {
+        roomHotspots.forEach(hotspot => {
+          hotspot.planPoint.classList.toggle("is-active", hotspot.id === activeRoomId);
+        });
+      }
+
+      function getLayerName(layers, layerIndex) {
+        const index = Number(layerIndex);
+
+        if (!Number.isInteger(index) || !layers || !layers[index]) {
+          return null;
+        }
+
+        const layer = layers[index];
+        const name = layer.fullPath || layer.name || layer.Name || "";
+        const parts = String(name).split("::").filter(Boolean);
+
+        return parts[parts.length - 1] || null;
+      }
+
+      function slugifyRoomId(label, index) {
+        const slug = String(label)
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        return slug || `point-${index + 1}`;
+      }
+
+      function normalizeRoomName(value) {
+        return String(value).trim().toLowerCase();
+      }
+
+      function swapPlanPositions(rooms, firstName, secondName) {
+        const first = rooms.find(room => normalizeRoomName(room.label || room.id) === firstName);
+        const second = rooms.find(room => normalizeRoomName(room.label || room.id) === secondName);
+
+        if (!first || !second) {
+          return;
+        }
+
+        const firstMapX = first.mapX;
+        const firstMapY = first.mapY;
+        first.mapX = second.mapX;
+        first.mapY = second.mapY;
+        second.mapX = firstMapX;
+        second.mapY = firstMapY;
+      }
+
+      function applyUnitPlanPointAdjustments(rooms, adjustments = {}) {
+        rooms.forEach(room => {
+          const adjustment = adjustments[normalizeRoomName(room.label || room.id)];
+
+          if (!adjustment) {
+            return;
+          }
+
+          room.mapX = THREE.MathUtils.clamp(room.mapX + (adjustment.x || 0), 0, 100);
+          room.mapY = THREE.MathUtils.clamp(room.mapY - (adjustment.y || 0), 0, 100);
+        });
+      }
+
+      function getRhinoLayerPointHotspots(object, bounds) {
+        const points = [];
+        const layers = object.userData?.layers || [];
+        const size = bounds.getSize(new THREE.Vector3());
+
+        object.updateWorldMatrix(true, true);
+
+        object.traverse(child => {
+          if (!child.isPoints || !child.geometry?.attributes?.position) {
+            return;
+          }
+
+          const layerIndex = child.userData?.attributes?.layerIndex
+            ?? child.userData?.attributes?.layer_index
+            ?? child.userData?.layerIndex;
+          const layerName = getLayerName(layers, layerIndex);
+
+          if (!layerName || /^default$/i.test(layerName)) {
+            return;
+          }
+
+          const positions = child.geometry.attributes.position;
+
+          for (let i = 0; i < positions.count; i += 1) {
+            const worldPosition = new THREE.Vector3().fromBufferAttribute(positions, i);
+            child.localToWorld(worldPosition);
+            const localPosition = modelRoot.worldToLocal(worldPosition.clone());
+            const mapX = size.x > 0
+              ? THREE.MathUtils.clamp(((localPosition.x - bounds.min.x) / size.x) * 100, 0, 100)
+              : 50;
+            const mapY = size.z > 0
+              ? THREE.MathUtils.clamp((1 - ((localPosition.z - bounds.min.z) / size.z)) * 100, 0, 100)
+              : 50;
+
+            points.push({
+              id: slugifyRoomId(layerName, points.length),
+              label: layerName,
+              position: localPosition,
+              mapX,
+              mapY,
+              source: "rhino-layer-point"
+            });
+          }
+
+          child.visible = false;
+        });
+
+        return points;
+      }
+
+      function applyRoomView(room, cameraPosition, cameraTarget, shouldAnimate = true) {
+        activeRoomId = room.id;
+        controls.minDistance = roomControlDistance.min;
+        controls.maxDistance = roomControlDistance.max;
+        unlockRoomViewControls();
+        updateActiveRoom();
+
+        const worldPosition = modelRoot.localToWorld(cameraPosition.clone());
+        const worldTarget = modelRoot.localToWorld(cameraTarget.clone());
+
+        if (shouldAnimate) {
+          moveCameraTo(worldPosition, worldTarget, roomViewFov);
+          return;
+        }
+
+        transition = null;
+        controls.enabled = true;
+        camera.position.copy(worldPosition);
+        camera.fov = roomViewFov;
+        camera.lookAt(worldTarget);
+        controls.target.copy(worldTarget);
+        camera.updateProjectionMatrix();
+        controls.update();
+        lockRoomViewControls();
+        keepCameraInsideInterior();
+      }
+
+      function enterRoom(room, cameraPosition, cameraTarget) {
+        applyRoomView(room, cameraPosition, cameraTarget);
+      }
+
+      function createRoomHotspots(bounds, rhinoPointHotspots = []) {
+        hotspotGroup.clear();
+        hotspotLayer.innerHTML = "";
+        floorplanShell.querySelectorAll(".floorplan-point").forEach(point => point.remove());
+        roomHotspots = [];
+
+        const size = bounds.getSize(new THREE.Vector3());
+        const center = bounds.getCenter(new THREE.Vector3());
+        const floorY = bounds.min.y;
+        const fixedEyeHeight = 0.69;
+        const fixedLookHeight = fixedEyeHeight * 0.9;
+        const rooms = rhinoPointHotspots;
+        const planPointSettings = unitPlanPointSettings[type];
+
+        if (type === "focus") {
+          console.log("Focus unit point names:", rooms.map(room => room.label || room.id));
+        }
+
+        if (planPointSettings?.swapLivingBedroom) {
+          swapPlanPositions(rooms, "living", "bedroom");
+        }
+
+        if (planPointSettings?.applyAdjustments) {
+          applyUnitPlanPointAdjustments(rooms, planPointSettings.adjustments);
+        }
+
+        rooms.forEach(room => {
+          const position = room.position.clone();
+          const roomKey = normalizeRoomName(room.label || room.id);
+          const viewSettings = unitRoomViewSettings[type]?.[roomKey] || {};
+          const viewTargetRoom = viewSettings.target
+            ? rooms.find(item => normalizeRoomName(item.label || item.id) === normalizeRoomName(viewSettings.target))
+            : null;
+          const yaw = Number.isFinite(room.yaw)
+            ? THREE.MathUtils.degToRad(room.yaw)
+            : Math.atan2(center.x - position.x, center.z - position.z);
+          const lookDirection = viewTargetRoom
+            ? new THREE.Vector3(
+              viewTargetRoom.position.x - position.x,
+              0,
+              viewTargetRoom.position.z - position.z
+            ).normalize()
+            : new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+
+          if (viewSettings.reverse) {
+            lookDirection.multiplyScalar(-1);
+          }
+
+          const yawAdjustment = viewSettings.yaw || 0;
+
+          if (yawAdjustment !== 0) {
+            lookDirection.applyAxisAngle(
+              new THREE.Vector3(0, 1, 0),
+              THREE.MathUtils.degToRad(yawAdjustment)
+            );
+          }
+
+          const cameraPosition = position.clone();
+          cameraPosition.y = floorY + fixedEyeHeight;
+
+          const cameraTarget = cameraPosition.clone()
+            .add(lookDirection.clone().multiplyScalar(Math.max(size.x, size.z) * 0.36))
+            .setY(floorY + fixedLookHeight);
+
+          const marker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.07, 24, 16),
+            new THREE.MeshStandardMaterial({
+              color: 0xf06a2f,
+              emissive: 0x7a2509,
+              emissiveIntensity: 0.45,
+              roughness: 0.45
+            })
+          );
+          marker.position.copy(position);
+          marker.position.y = room.source === "rhino-layer-point" ? position.y : floorY + 0.12;
+          hotspotGroup.add(marker);
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "room-hotspot";
+          button.setAttribute("aria-label", `${room.label} perspective view`);
+          button.title = room.label;
+          button.addEventListener("click", () => {
+            enterRoom(room, cameraPosition, cameraTarget);
+          });
+          hotspotLayer.appendChild(button);
+
+          const planPoint = document.createElement("button");
+          planPoint.type = "button";
+          planPoint.className = "floorplan-point";
+          planPoint.style.left = `${room.mapX}%`;
+          planPoint.style.top = `${room.mapY}%`;
+          planPoint.setAttribute("aria-label", `${room.label} perspective view`);
+          planPoint.title = room.label;
+          planPoint.addEventListener("click", () => {
+            enterRoom(room, cameraPosition, cameraTarget);
+          });
+          floorplanShell.appendChild(planPoint);
+
+          roomHotspots.push({
+            id: room.id,
+            room,
+            button,
+            planPoint,
+            marker,
+            cameraPosition,
+            cameraTarget,
+            position: marker.position
+          });
+        });
+
+        const initialHotspot = initialRoomViewId
+          ? roomHotspots.find(hotspot => hotspot.id === initialRoomViewId)
+          : null;
+
+        if (initialHotspot) {
+          applyRoomView(initialHotspot.room, initialHotspot.cameraPosition, initialHotspot.cameraTarget, false);
+        }
+      }
+
+      function createInteriorBounds(bounds) {
+        const size = bounds.getSize(new THREE.Vector3());
+        const minInsetX = Math.max(size.x * 0.08, 0.12);
+        const minInsetZ = Math.max(size.z * 0.08, 0.12);
+        const floorY = bounds.min.y;
+        const eyeMinY = floorY + 0.7;
+        const eyeMaxY = Math.min(bounds.max.y - 0.15, floorY + 1.75);
+
+        return new THREE.Box3(
+          new THREE.Vector3(bounds.min.x + minInsetX, eyeMinY, bounds.min.z + minInsetZ),
+          new THREE.Vector3(bounds.max.x - minInsetX, Math.max(eyeMinY, eyeMaxY), bounds.max.z - minInsetZ)
+        );
+      }
+
+      function clampVectorToBox(vector, bounds) {
+        vector.x = THREE.MathUtils.clamp(vector.x, bounds.min.x, bounds.max.x);
+        vector.y = THREE.MathUtils.clamp(vector.y, bounds.min.y, bounds.max.y);
+        vector.z = THREE.MathUtils.clamp(vector.z, bounds.min.z, bounds.max.z);
+      }
+
+      function keepCameraInsideInterior() {
+        return;
+      }
+
+      function updateHotspotLabels() {
+        if (!modelBounds || roomHotspots.length === 0) {
+          return;
+        }
+
+        const { clientWidth, clientHeight } = modelViewer;
+
+        roomHotspots.forEach(hotspot => {
+          const worldPosition = hotspot.marker.getWorldPosition(new THREE.Vector3());
+          const projected = worldPosition.project(camera);
+          const isHidden = projected.z < -1 || projected.z > 1;
+          const x = (projected.x * 0.5 + 0.5) * clientWidth;
+          const y = (-projected.y * 0.5 + 0.5) * clientHeight;
+
+          hotspot.button.style.left = `${x}px`;
+          hotspot.button.style.top = `${y}px`;
+          hotspot.button.classList.toggle("is-hidden", isHidden);
+        });
+      }
+
+      function frameModel(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxAxis = Math.max(size.x, size.y, size.z) || 1;
+        const scale = 4 / maxAxis;
+
+        object.scale.setScalar(scale);
+        object.position.set(
+          -center.x * scale,
+          -box.min.y * scale,
+          -center.z * scale
+        );
+
+        const scaledBox = new THREE.Box3().setFromObject(object);
+        const scaledSize = scaledBox.getSize(new THREE.Vector3());
+        modelBounds = scaledBox;
+        interiorBounds = createInteriorBounds(scaledBox);
+        const rhinoPointHotspots = getRhinoLayerPointHotspots(object, scaledBox);
+
+        const modelRadius = scaledBox.getBoundingSphere(new THREE.Sphere()).radius || 1;
+        const viewingDistance = Math.max(
+          modelRadius / Math.sin(THREE.MathUtils.degToRad(camera.fov) / 2),
+          scaledSize.z * 1.35 + 6
+        );
+        const targetHeight = scaledSize.y * 0.5;
+        const cameraHeight = targetHeight + Math.tan(humanEyePitch) * viewingDistance;
+
+        controls.target.set(0, targetHeight, 0);
+        camera.position.set(viewingDistance * 0.38, cameraHeight, viewingDistance * 0.92);
+        camera.updateProjectionMatrix();
+        controls.update();
+        saveOverviewState();
+        createRoomHotspots(scaledBox, rhinoPointHotspots);
+      }
+
+      function resizeRenderer() {
+        const { clientWidth, clientHeight } = modelViewer;
+
+        if (!clientWidth || !clientHeight) {
+          return;
+        }
+
+        renderer.setSize(clientWidth, clientHeight, false);
+        camera.aspect = clientWidth / clientHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      overviewView.addEventListener("click", returnToOverview);
+      planToggle.addEventListener("click", () => {
+        const isHidden = modelViewer.classList.toggle("is-plan-hidden");
+        planToggle.classList.toggle("is-active", !isHidden);
+        planToggle.setAttribute("aria-pressed", String(!isHidden));
+      });
+      planToggle.setAttribute("aria-pressed", "true");
+
+      fullscreenView.addEventListener("click", () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          modelViewer.requestFullscreen();
+        }
+      });
+      window.addEventListener("resize", resizeRenderer);
+
+      resizeRenderer();
+
+      if (!externalModelPath) {
+        setStatus("Model file is not connected for this unit yet.");
+      } else {
+        loader.load(
+          modelPath,
+          object => {
+            fixRhinoInstanceTransforms(object);
+            addModelToScene(object, externalModelPath);
+          },
+          progress => {
+            if (progress.total > 0) {
+              const percent = Math.round((progress.loaded / progress.total) * 100);
+              setStatus(`Loading model ${percent}%`);
+            }
+          },
+          error => {
+            showModelLoadError(error, externalModelPath);
+          }
+        );
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (transition) {
+          const elapsed = (performance.now() - transition.startTime) / transition.duration;
+          const progress = Math.min(elapsed, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+
+          camera.position.lerpVectors(transition.fromPosition, transition.toPosition, eased);
+          camera.quaternion.slerpQuaternions(transition.fromQuaternion, transition.toQuaternion, eased);
+          camera.fov = THREE.MathUtils.lerp(transition.fromFov, transition.toFov, eased);
+          controls.target.lerpVectors(transition.fromTarget, transition.toTarget, eased);
+          camera.updateProjectionMatrix();
+
+          if (progress >= 1) {
+            const finalPosition = transition.toPosition.clone();
+            const finalTarget = transition.toTarget.clone();
+            const finalQuaternion = transition.toQuaternion.clone();
+            const finalFov = transition.toFov;
+
+            transition = null;
+            controls.enabled = true;
+            controls.target.copy(finalTarget);
+            camera.position.copy(finalPosition);
+            camera.quaternion.copy(finalQuaternion);
+            camera.fov = finalFov;
+            camera.updateProjectionMatrix();
+            controls.update();
+            if (activeRoomId) {
+              lockRoomViewControls();
+            }
+            keepCameraInsideInterior();
+          }
+        } else {
+          controls.update();
+          keepCameraInsideInterior();
+        }
+
+        updateHotspotLabels();
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    }
+
+    loadUnitModel(unitType);
+  </script>
+</body>
+</html>
