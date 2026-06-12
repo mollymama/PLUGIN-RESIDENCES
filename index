@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PLUGIN｜RESIDENCES</title>
+ <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.20.1/dist/maplibre-gl.css">
+ <link rel="stylesheet" href="style.css">  <!-- ⭐這行 -->
+  
+</head>
+
+<body>
+
+  <header>
+    <a class="brand" href="#">
+      <span class="brand-logo-frame">
+        <img class="brand-logo" src="images/LOGO-06.png" alt="創域居所 Live-Work Housing">
+      </span>
+    </a>
+
+    <nav aria-label="Primary navigation">
+      <a href="#architecture-intro">Architecture</a>
+      <a href="#units">Collections</a>
+      <a href="#system">Locations</a>
+    </nav>
+
+    <button class="header-cta" type="button" onclick="scrollToSection('units')">Explore</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="kinetic-title" role="button" tabindex="0" onclick="goToUnitsFromTitle()" onkeydown="handleTitleKey(event)" aria-label="Scroll to three live-work unit types">
+          <span>Choosing</span>
+          <span>YOUR</span>
+          <span>Lifestyle</span>
+        </h1>
+        <div class="hero-copy">
+          <p class="hero-statement">
+            A new housing system<br>
+            for a new way of living.
+          </p>
+          <p class="hero-action">Choose how you live. Build how you work.</p>
+        </div>
+
+      </div>
+
+      <div class="model-box" aria-label="Factory Reuse Housing Prototype video">
+        <video class="model-image hero-video" autoplay muted loop playsinline>
+          <source src="images/home_video.mp4" type="video/mp4">
+        </video>
+      </div>
+    
+    </section>
+
+    <section id="architecture-intro" class="architecture-intro-section" aria-label="Building introduction">
+      <div class="architecture-intro-shell">
+        <div class="architecture-intro-heading">
+          <p>Adaptive Reuse Prototype</p>
+          <h2>Replicable 
+            production housing system</h2>
+        </div>
+
+        <div class="architecture-model-scroll">
+          <section class="architecture-model-viewer" aria-label="Building 3D model preview">
+            <div id="architecture-model-stage" class="architecture-model-stage">
+              <p id="architecture-model-status" class="architecture-model-status">3D model disabled</p>
+              <div class="architecture-model-ui" aria-hidden="true">
+                <div class="architecture-model-brand">
+                  <span>PLUGIN</span>
+                  <strong>Transforming Idle Factory into Productive Communities</strong>
+                </div>
+                <div class="architecture-model-steps">
+                  <button class="architecture-model-step is-active" type="button" data-assembly-step="factory">
+                    <em>01</em>
+                    <strong>Factory</strong>
+                  </button>
+                  <button class="architecture-model-step" type="button" data-assembly-step="structure">
+                    <em>02</em>
+                    <strong>Structure</strong>
+                  </button>
+                  <button class="architecture-model-step" type="button" data-assembly-step="core">
+                    <em>03</em>
+                    <strong>Core</strong>
+                  </button>
+                  <button class="architecture-model-step" type="button" data-assembly-step="slab">
+                    <em>04</em>
+                    <strong>Slab</strong>
+                  </button>
+                  <button class="architecture-model-step" type="button" data-assembly-step="deck-rail">
+                    <em>05</em>
+                    <strong>Deck / Rail</strong>
+                  </button>
+                </div>
+                <div class="architecture-model-progress" aria-hidden="true">
+                  <span data-assembly-progress></span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="architecture-intro-heading architecture-building-system-heading">
+          <p>Modular Architecture</p>
+          <h2>Building System</h2>
+        </div>
+
+        <div class="architecture-gallery-wrap architecture-system-gallery-wrap">
+          <div id="architecture-system-gallery" class="architecture-gallery" tabindex="0" aria-label="Building system image gallery">
+            <figure class="architecture-slide architecture-system-slide-large" data-architecture-system-slide>
+              <img src="images/1.gif" alt="Grid structure animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/2.gif" alt="Inner corridor animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/3.gif" alt="Core position animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/4.gif" alt="Unit core animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/5.gif" alt="Arrangement animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/6.gif" alt="Solar analysis animation" draggable="false">
+            </figure>
+            <figure class="architecture-slide" data-architecture-system-slide>
+              <img src="images/7.gif" alt="Building system animation" draggable="false">
+            </figure>
+          </div>
+        </div>
+
+        <div class="architecture-intro-footer architecture-system-gallery-footer">
+          <div class="architecture-page-count">
+            <span id="architecture-system-current">01</span>
+            <span aria-hidden="true">—</span>
+            <span id="architecture-system-total">07</span>
+          </div>
+          <p>
+            透過既有結構的再利用與模組化住宅單元的配置，系統逐步整合核心、公共空間與居住機能，
+            形成兼顧採光、效率與社群互動的居住環境，為閒置工業建築提供新的轉化途徑。
+          </p>
+          <div class="architecture-controls" aria-label="Building system gallery controls">
+            <button type="button" class="architecture-control" data-architecture-system-prev aria-label="Previous building system image">←</button>
+            <button type="button" class="architecture-control" data-architecture-system-next aria-label="Next building system image">→</button>
+          </div>
+        </div>
+
+        <div class="architecture-gallery-wrap">
+          <div id="architecture-gallery" class="architecture-gallery" tabindex="0" aria-label="Building image gallery">
+            <figure class="architecture-slide architecture-slide-wide" data-architecture-slide>
+              <img src="images/cf483a65-2db5-4439-908a-6e51797ef55c.jpg" alt="Preserved factory base with new live-work units" draggable="false">
+            </figure>
+            <figure class="architecture-slide architecture-slide-portrait" data-architecture-slide>
+              <img src="images/yjo4m,4x.6.png" alt="Building adaptive reuse concept render" draggable="false">
+            </figure>
+            <figure class="architecture-slide architecture-slide-wide" data-architecture-slide>
+              <img src="images/20251010700635.jpg" alt="Building exterior image" draggable="false">
+            </figure>
+            <figure class="architecture-slide architecture-slide-wide" data-architecture-slide>
+              <img src="images/08_40_37.png" alt="Original factory building image" draggable="false">
+            </figure>
+            <figure class="architecture-slide architecture-slide-wide" data-architecture-slide>
+              <img src="images/4e9853b4-351f-4b80-bccc-59c2229da742.png" alt="Live-work building massing image" draggable="false">
+            </figure>
+          </div>
+        </div>
+
+        <div class="architecture-intro-footer">
+          <div class="architecture-page-count">
+            <span id="architecture-current">01</span>
+            <span aria-hidden="true">—</span>
+            <span id="architecture-total">05</span>
+          </div>
+          <p>
+            北投製片場曾是台灣重要的影像製作基地，承載著電影工業發展的歷史記憶。
+            歷經停用與整頓後，場域雖獲保存，卻仍面臨低度使用與閒置的課題。
+          </p>
+          <div class="architecture-controls" aria-label="Architecture gallery controls">
+            <button type="button" class="architecture-control" data-architecture-prev aria-label="Previous architecture image">←</button>
+            <button type="button" class="architecture-control" data-architecture-next aria-label="Next architecture image">→</button>
+          </div>
+        </div>
+
+        <div class="architecture-section-showcase">
+          <figure
+            class="architecture-feature-image architecture-section-reveal"
+            data-section-reveal
+            tabindex="0"
+            aria-label="Move the pointer horizontally to reveal the cutaway section drawing"
+          >
+            <img
+              class="architecture-section-reveal-base"
+              src="images/all0528.png"
+              alt="Building exterior perspective drawing"
+              draggable="false"
+            >
+            <div class="architecture-section-reveal-cut" aria-hidden="true">
+              <img src="images/0528.png" alt="" draggable="false">
+            </div>
+            <div class="architecture-section-reveal-handle" aria-hidden="true">
+              <span></span>
+            </div>
+            <div class="architecture-section-markers" aria-hidden="true">
+              <span class="architecture-section-marker is-active" data-public-space-marker="1">1</span>
+              <span class="architecture-section-marker" data-public-space-marker="2">2</span>
+              <span class="architecture-section-marker" data-public-space-marker="3">3</span>
+            </div>
+          </figure>
+
+          <aside class="public-space-gallery-panel" aria-label="Public space render gallery">
+            <div id="public-space-gallery" class="public-space-gallery" tabindex="0">
+              <figure class="public-space-slide" data-public-space-slide>
+                <img src="images/ChatGPT Image 202602_14_37.png" alt="Public space render 01" draggable="false">
+              </figure>
+              <figure class="public-space-slide" data-public-space-slide>
+                <img src="images/ChatGPT07_16_27.png" alt="Public space render 02" draggable="false">
+              </figure>
+              <figure class="public-space-slide" data-public-space-slide>
+                <img src="images/ChatGPT06_58_06.png" alt="Public space render 03" draggable="false">
+              </figure>
+            </div>
+
+            <div class="public-space-footer">
+              <div class="architecture-page-count public-space-count">
+                <span id="public-space-current" class="public-space-count-current">01</span>
+              </div>
+              <div>
+                <p class="public-space-kicker">Shared Interior</p>
+                <p class="public-space-copy">租借攝影棚拍攝空間</p>
+              </div>
+              <div class="architecture-controls public-space-controls" aria-label="Public space gallery controls">
+                <button type="button" class="architecture-control" data-public-space-prev aria-label="Previous public space image">←</button>
+                <button type="button" class="architecture-control" data-public-space-next aria-label="Next public space image">→</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <figure class="architecture-plan-image">
+          <img src="images/typical_plan.png" alt="Typical floor plan" draggable="false">
+          <button
+            class="architecture-plan-hotspot architecture-plan-hotspot-media"
+            type="button"
+            onclick="scrollToUnitCard('media')"
+            aria-label="Scroll to Media-Unit room type"
+          >
+            <span class="architecture-plan-tooltip">
+              <strong>Media Unit</strong>
+              <span>適合1–2人，創作、拍攝與生活無縫切換的彈性居所</span>
+              <small>建坪：18坪</small>
+              <small>臥室 x 1｜衛浴 x 1｜開放廚房 x 1｜創作工作區 x 1</small>
+            </span>
+          </button>
+          <button
+            class="architecture-plan-hotspot architecture-plan-hotspot-focus"
+            type="button"
+            onclick="scrollToUnitCard('focus')"
+            aria-label="Scroll to Focus-Unit room type"
+          >
+            <span class="architecture-plan-tooltip">
+              <strong>Focus Unit</strong>
+              <span>適合2–4人，專為遠距工作與高效專注打造的靜謐居所</span>
+              <small>建坪：23坪</small>
+              <small>臥室 x 2｜衛浴 x 2｜開放廚房 x 1｜獨立工作區 x 1</small>
+            </span>
+          </button>
+          <button
+            class="architecture-plan-hotspot architecture-plan-hotspot-logi architecture-plan-hotspot-logi-top"
+            type="button"
+            onclick="scrollToUnitCard('logi')"
+            aria-label="Scroll to Logi-Unit room type"
+          >
+            <span class="architecture-plan-tooltip">
+              <strong>Logi Unit</strong>
+              <span>適合2–4人，兼具居住與生產機能的職住整合空間</span>
+              <small>建坪：22坪</small>
+              <small>臥室 x 2｜衛浴 x 1｜開放廚房 x 1｜工作儲藏區 x 1</small>
+            </span>
+          </button>
+          <button
+            class="architecture-plan-hotspot architecture-plan-hotspot-logi architecture-plan-hotspot-logi-bottom"
+            type="button"
+            onclick="scrollToUnitCard('logi')"
+            aria-label="Scroll to Logi-Unit room type"
+          >
+            <span class="architecture-plan-tooltip">
+              <strong>Logi Unit</strong>
+              <span>適合2–4人，兼具居住與生產機能的職住整合空間</span>
+              <small>建坪：22坪</small>
+              <small>臥室 x 1｜衛浴 x 1｜開放廚房 x 1｜工作儲藏區 x 1</small>
+            </span>
+          </button>
+        </figure>
+      </div>
+    </section>
+
+    <section id="units">
+      <div class="section-inner">
+        <div class="section-heading-grid">
+          <h2 class="section-title">Collections</h2>
+          <p class="section-desc">
+           
+          </p>
+        </div>
+
+        <div class="cards">
+          <article class="card unit-card" data-type="media" tabindex="0" onclick="openUnitModel('media')" onkeydown="handleUnitCardKey(event, 'media')" aria-label="Open Media-Unit floor plan and 3D model">
+            <img class="unit-plan-image" src="images/ChatGPT Image12_44_14.png" alt="Media-Unit rendered room">
+            <div class="unit-card-info">
+              <div class="unit-card-title">
+                <div class="card-type">CREATOR / STUDIO</div>
+                <h3>Media Unit</h3>
+              </div>
+              <div class="unit-card-copy">
+                <span class="unit-series">M Residence</span>
+                <p class="unit-description">
+                  A calm studio residence for shooting, editing, presentation, and living with a polished professional rhythm.
+                </p>
+              <p>
+                為影像創作者、設計師與內容工作者設計。
+                結合工作室、拍攝、剪輯與彈性居住空間。
+              </p>
+              </div>
+              <div class="unit-card-footer">
+                <div class="unit-market-price">
+                  <span>Monthly Rent</span>
+                  <strong>NT 18K<small>起</small></strong>
+                </div>
+                <div class="unit-availability" data-unit-availability="media"></div>
+                <span class="tag">Studio + Editing + Living</span>
+                <span class="unit-card-action">Open 3D Model</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card unit-card" data-type="logi" tabindex="0" onclick="openUnitModel('logi')" onkeydown="handleUnitCardKey(event, 'logi')" aria-label="Open Logi-Unit floor plan and 3D model">
+            <img class="unit-plan-image" src="images/ChatGPT Image 20201_28_54.png" alt="Logi-Unit rendered room">
+            <div class="unit-card-info">
+              <div class="unit-card-title">
+                <div class="card-type">E-COMMERCE / LIGHT INDUSTRY</div>
+                <h3>Logi Unit</h3>
+              </div>
+              <div class="unit-card-copy">
+                <span class="unit-series">L Residence</span>
+                <p class="unit-description">
+                  A refined live-work suite planned for inventory, packing, focused operation, and private daily routines.
+                </p>
+              <p>
+                為電商、自雇者與輕工業工作者設計。
+                入口鄰近工作區，配置倉儲、包裝、出貨與居住空間。
+              </p>
+              </div>
+              <div class="unit-card-footer">
+                <div class="unit-market-price">
+                  <span>Monthly Rent</span>
+                  <strong>NT 25K<small>起</small></strong>
+                </div>
+                <div class="unit-availability" data-unit-availability="logi"></div>
+                <span class="tag">Storage + Packing + Living</span>
+                <span class="unit-card-action">Open 3D Model</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card unit-card" data-type="focus" tabindex="0" onclick="openUnitModel('focus')" onkeydown="handleUnitCardKey(event, 'focus')" aria-label="Open Focus-Unit floor plan and 3D model">
+            <img class="unit-plan-image" src="images/Gemini_Generated_Image_bbcj0kbbcj0kbbcj.png" alt="Focus-Unit rendered room">
+            <div class="unit-card-info">
+              <div class="unit-card-title">
+                <div class="card-type">REMOTE WORK / DEEP FOCUS</div>
+                <h3>Focus Unit</h3>
+              </div>
+              <div class="unit-card-copy">
+                <span class="unit-series">F Residence</span>
+                <p class="unit-description">
+                  A premium quiet-plan residence for deep work, restorative privacy, and a clear separation of rest and focus.
+                </p>
+              <p>
+                為工程師、研究者與遠端工作者設計。
+                強調安靜、採光、閱讀與長時間專注工作的環境。
+              </p>
+              </div>
+              <div class="unit-card-footer">
+                <div class="unit-market-price">
+                  <span>Monthly Rent</span>
+                  <strong>NT 28K<small>起</small></strong>
+                </div>
+                <div class="unit-availability" data-unit-availability="focus"></div>
+                <span class="tag">Work + Rest + Concentration</span>
+                <span class="unit-card-action">Open 3D Model</span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="system" class="location-section">
+      <div class="location-heading">
+        <div>
+          <p class="section-kicker">Greater Taipei Network</p>
+          <h2 class="section-title">Find Location</h2>
+        </div>
+        <p class="section-desc">
+        </p>
+      </div>
+
+      <div class="location-grid">
+        <div class="location-panel">
+          <div class="location-panel-header">
+            <span>Available Sites</span>
+            <strong id="location-count">0</strong>
+          </div>
+          <div id="location-list" class="location-list" aria-label="Potential housing system locations"></div>
+        </div>
+
+        <div class="map-shell">
+          <div class="map-style-switcher" aria-label="Map display style">
+            <button class="map-style-btn active" type="button" onclick="setMapStyle('liberty', this)">Liberty</button>
+            <button class="map-style-btn" type="button" onclick="setMapStyle('dark', this)">Dark</button>
+            <button class="map-style-btn" type="button" onclick="setMapStyle('positron', this)">Positron</button>
+          </div>
+          <div id="location-map" class="location-map" aria-label="Interactive map of Taipei and New Taipei locations"></div>
+        </div>
+      </div>
+      <h2 class="section-title">空間生成系統</h2>
+      <p class="section-desc">
+        設計不是從單一造型開始，而是從既有工廠結構、核心筒、廊道、庭院與房型規則之間的關係生成。
+      </p>
+
+      <div class="system">
+        <div class="system-item">
+          <span>01</span>
+          <h4>Structure Grid</h4>
+          <p>以既有工廠結構為基礎，插入可調整的住宅網格系統。</p>
+        </div>
+
+        <div class="system-item">
+          <span>02</span>
+          <h4>Core System</h4>
+          <p>分離住宅垂直動線與生產物流動線，形成雙核心配置。</p>
+        </div>
+
+        <div class="system-item">
+          <span>03</span>
+          <h4>Courtyard Corridor</h4>
+          <p>透過中庭與環狀走廊，將採光、通風與公共性引入住宅內部。</p>
+        </div>
+
+        <div class="system-item">
+          <span>04</span>
+          <h4>Unit Rules</h4>
+          <p>依照使用者需求，將不同房型植入網格並形成可複製的住宅產品。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    © 2026 PLUGIN｜RESIDENCES
+  </footer>
+
+  <div id="unit-modal" class="unit-modal" aria-hidden="true">
+    <button id="unit-modal-backdrop" class="unit-modal-backdrop" type="button" aria-label="Close 3D viewer"></button>
+    <section class="unit-modal-window" role="dialog" aria-modal="true" aria-label="Room 3D viewer">
+      <button id="unit-modal-close" class="unit-modal-close" type="button" aria-label="Close 3D viewer">&times;</button>
+      <div id="unit-modal-loader" class="unit-modal-loader" aria-live="polite">
+        <span></span>
+        <strong>Loading 3D Model</strong>
+      </div>
+      <iframe id="unit-modal-frame" class="unit-modal-frame" title="Room 3D model viewer" scrolling="no"></iframe>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@5.20.1/dist/maplibre-gl.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="function/script.js"></script>
+  <script type="module" src="function/architecture-glb-loader.js"></script>
+
+</body>
+</html>
